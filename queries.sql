@@ -41,13 +41,12 @@ FROM INFORMATION_SCHEMA.COLUMNS c
 WHERE LOWER(table_name) = '<tbl>';
 
 -- Column information from a table: column name, number of values, number of NULL values, number of minimum values, number of maximum values,
--- and number of unique values. Replace <query from below> with the second query on one line.
-SELECT REPLACE(REPLACE(REPLACE('<query from below>', '<col>', column_name), '<tbl>', table_name), '<start>',
-	       (CASE WHEN ordinal_position = 1 THEN '' ELSE 'UNION ALL ' END))
+-- and number of unique values.
+SELECT REPLACE(REPLACE(REPLACE('<start>SELECT ''<col>'' as colname, COUNT(*) as numvalues, MAX(freqnull) as freqnull, CAST(MIN(minval) as VARCHAR) as minval, SUM(CASE WHEN <col> = minval THEN freq ELSE 0 END) as numminvals, CAST(MAX(maxval) as VARCHAR) as maxval, SUM(CASE WHEN <col> = maxval THEN freq ELSE 0 END) as nummaxvals, SUM(CASE WHEN freq = 1 THEN 1 ELSE 0 END) as numuniques FROM (SELECT <col>, COUNT(*) as freq FROM <tab> GROUP BY <col>) osum CROSS JOIN (SELECT MIN(<col>) as minval, MAX(<col>) as maxval, SUM(CASE WHEN <col> IS NULL THEN 1 ELSE 0 END) as freqnull FROM (SELECT <col> FROM <tab>) osum) summary','<col>', column_name),'<tab>', table_name),'<start>', (CASE WHEN ordinal_position = 1 THEN '' ELSE 'UNION ALL ' END))
 FROM (SELECT table_name, column_name, ordinal_position
-      FROM INFORMATION_SCHEMA.COLUMNS
-      WHERE LOWER(table_name) = '<tbl>') tc
--- Replace <tbl> in final WHERE clause of FROM with the actual table name.	       
+		FROM information_schema.columns
+		WHERE table_name = '<tbl>') a; -- Replace <tbl> in final WHERE clause of FROM with the actual table name.
+-- This is the query in the SELECT statement above.       
 <start>SELECT ''<col>'' AS colname, COUNT(*) AS numvalues,
 	       MAX(freqnull) AS freqnull,
 	       CAST(MIN(minval) AS VARCHAR(255)) AS minval,
@@ -63,8 +62,5 @@ FROM (SELECT <col>, COUNT(*) AS freq
 	 FROM <tbl>
 	 ) summary
 	 
-SELECT REPLACE(REPLACE(REPLACE('<start>SELECT ''<col>'' as colname, COUNT(*) as numvalues, MAX(freqnull) as freqnull, CAST(MIN(minval) as VARCHAR) as minval, SUM(CASE WHEN <col> = minval THEN freq ELSE 0 END) as numminvals, CAST(MAX(maxval) as VARCHAR) as maxval, SUM(CASE WHEN <col> = maxval THEN freq ELSE 0 END) as nummaxvals, SUM(CASE WHEN freq = 1 THEN 1 ELSE 0 END) as numuniques FROM (SELECT <col>, COUNT(*) as freq FROM <tab> GROUP BY <col>) osum CROSS JOIN (SELECT MIN(<col>) as minval, MAX(<col>) as maxval, SUM(CASE WHEN <col> IS NULL THEN 1 ELSE 0 END) as freqnull FROM (SELECT <col> FROM <tab>) osum) summary','<col>', column_name),'<tab>', table_name),'<start>', (CASE WHEN ordinal_position = 1 THEN '' ELSE 'UNION ALL ' END))
-FROM (SELECT table_name, column_name, ordinal_position
-		FROM information_schema.columns
-		WHERE table_name = 'CovidCases') a;
+
 

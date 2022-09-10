@@ -7,7 +7,8 @@ FROM
 FROM <tbl>) sq;
 
 -- Calculate summary statistics for one column. Includes: number of distinct values, minimum and maximum values, mode, antimode, frequency of minimum and maximum values,
--- frequency of mode and antimode, number of values that occur only one time, number of modes, number of anymodes.
+-- frequency of mode and antimode, number of values that occur only one time, number of modes, number of anymodes. The second subquery produces: minimum and maximum
+-- frequency, minimum and maximum values, and number of NULL values.
 WITH tsum AS (
 	SELECT '<col>' as col, <col> as val, COUNT(*) AS freq
 	FROM <tbl> t

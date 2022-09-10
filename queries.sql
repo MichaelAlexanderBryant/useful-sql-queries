@@ -6,6 +6,15 @@ FROM
 (SELECT ROW_NUMBER() OVER (ORDER BY <col>) AS rownum, COUNT(*) OVER() AS cnt, <col>
 FROM <tbl>) sq;
 
+-- Query data for histogram grouping categories with less than a count of 100 in 'other' category.
+SELECT (CASE WHEN cnt >= 100 THEN <col> ELSE 'OTHER' END) AS <col>, SUM(cnt) AS cnt
+FROM (SELECT t.<col>, COUNT(*) AS cnt
+      FROM <tbl> AS t
+      GROUP BY t.<col>
+      ) sq
+GROUP BY (CASE WHEN cnt >=100  THEN <col> ELSE 'OTHER' END)
+ORDER BY cnt DESC;
+
 -- Calculate summary statistics for a column. Includes: number of distinct values, minimum and maximum values, mode, antimode, frequency of minimum and maximum values,
 -- frequency of mode and antimode, number of values that occur only one time, number of modes, number of anymodes. The second subquery produces: minimum and maximum
 -- frequency, minimum and maximum values, and number of NULL values.

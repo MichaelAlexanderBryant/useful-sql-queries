@@ -49,6 +49,19 @@ SELECT (table_schema + '.' + table_name) AS table_name, column_name, ordinal_pos
 FROM INFORMATION_SCHEMA.COLUMNS c
 WHERE LOWER(table_name) = '<tbl>';
 
+-- Return number of null values in each column of a table. Replace "my_table" with the actual table name.
+DECLARE @t nvarchar(max)
+SET @t = N'SELECT '
+
+SELECT @t = @t + 'sum(case when ' + c.name + ' is null then 1 else 0 end) "Null Values for ' + c.name + '",
+                sum(case when ' + c.name + ' is null then 0 else 1 end) "Non-Null Values for ' + c.name + '",'
+FROM sys.columns c 
+WHERE c.object_id = object_id('my_table');
+
+SET @t = SUBSTRING(@t, 1, LEN(@t) - 1) + ' FROM my_table;'
+
+EXEC sp_executesql @t
+
 -- Random sample 10% of table.
 SELECT TOP 10 PERCENT *
 FROM <tbl>

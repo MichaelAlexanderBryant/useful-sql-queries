@@ -49,27 +49,33 @@ SELECT (table_schema + '.' + table_name) AS table_name, column_name, ordinal_pos
 FROM INFORMATION_SCHEMA.COLUMNS c
 WHERE LOWER(table_name) = '<tbl>';
 
--- Column information from a table: column name, number of values, number of NULL values, number of minimum values, number of maximum values,
--- and number of unique values.
-SELECT REPLACE(REPLACE(REPLACE('<start>SELECT ''<col>'' as colname, COUNT(*) as numvalues, MAX(freqnull) as freqnull, CAST(MIN(minval) as VARCHAR) as minval, SUM(CASE WHEN <col> = minval THEN freq ELSE 0 END) as numminvals, CAST(MAX(maxval) as VARCHAR) as maxval, SUM(CASE WHEN <col> = maxval THEN freq ELSE 0 END) as nummaxvals, SUM(CASE WHEN freq = 1 THEN 1 ELSE 0 END) as numuniques FROM (SELECT <col>, COUNT(*) as freq FROM <tab> GROUP BY <col>) osum CROSS JOIN (SELECT MIN(<col>) as minval, MAX(<col>) as maxval, SUM(CASE WHEN <col> IS NULL THEN 1 ELSE 0 END) as freqnull FROM (SELECT <col> FROM <tab>) osum) summary','<col>', column_name),'<tab>', table_name),'<start>', (CASE WHEN ordinal_position = 1 THEN '' ELSE 'UNION ALL ' END))
-FROM (SELECT table_name, column_name, ordinal_position
-		FROM information_schema.columns
-		WHERE table_name = '<tbl>') a; -- Replace <tbl> in final WHERE clause of FROM with the actual table name.
--- This is the query in the SELECT statement above.       
-<start>SELECT ''<col>'' AS colname, COUNT(*) AS numvalues,
-	       MAX(freqnull) AS freqnull,
-	       CAST(MIN(minval) AS VARCHAR(255)) AS minval,
-	       SUM(CASE WHEN <col> = maxval THEN freq ELSE 0 END) AS numminvals,
-	       CAST(MAX(maxval) AS VARCHAR(255)) AS maxval,
-	       SUM(CASE WHEN <col> = maxval THEN freq ELSE 0 END) AS nummaxvals,
-	       SUM(CASE WHEN freq = 1 THEN freq ELSE 0 END) AS numuniques
-FROM (SELECT <col>, COUNT(*) AS freq
-      FROM <tbl>
-      GROUP BY <col>) tsum CROSS JOIN
-	(SELECT MIN(<col>) AS minval, MAX(<col>) AS maxval,
-	 	SUM(CASE WHEN <col> IS NULL THEN 1 ELSE 0 END) AS freqnull
-	 FROM <tbl>
-	 ) summary
-	 
+-- Random sample 10% of table.
+SELECT TOP 10 PERCENT *
+FROM <tbl>
+ORDER BY NEWID();
 
+-- Proportional stratified sampling 10% of <col2> where <col1> is the column being stratified. Proportional stratified is sampling at a pre-defined rate.
+WITH cte AS (
+	SELECT *,
+		ROW_NUMBER() OVER (ORDER BY <col1>, <col2>) AS seqnum
+	FROM <tbl>
+)
+SELECT <col2>
+FROM cte
+WHERE seqnum % 10 = 1;
 
+-- Balanced stratified sampling (each value appearsan equal amount of times). This particular example samples 200 rows from two categories in <col2>. 
+-- <col1> is the indicator column of <col2> and <col3> is the value of interest that is being sampled.
+WITH cte AS (
+	SELECT *,
+		ROW_NUMBER() OVER (PARTITION BY <col1>
+				   ORDER BY NEWID()) AS seqnum
+	FROM (SELECT *,
+	      		(CASE WHEN <col2> = '<col2 category1>' THEN 1 ELSE 0 END) AS <col1>
+	      FROM <tbl>
+	      ) sq
+	)
+SELECT (CASE WHEN <col1> = 1 THEN <col3> END) AS <col2 category1>,
+	(CASE WHEN <col1> = 0 THEN <col3> END) AS <col2 category2>
+FROM cte
+WHERE seqnum <= 100

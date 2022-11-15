@@ -1,4 +1,4 @@
--- Rolling average over 3 day window
+-- Rolling average over 3 day window.
 SELECT date, AVG(count) OVER (ORDER BY date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS rolling_avg_3days
 FROM <tbl>
 

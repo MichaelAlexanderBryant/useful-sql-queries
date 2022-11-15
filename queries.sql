@@ -1,3 +1,7 @@
+-- Rolling average over 3 day window
+SELECT date, AVG(count) OVER (ORDER BY date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS rolling_avg_3days
+FROM <tbl>
+
 -- Calculate quantiles of a column.
 SELECT MAX(CASE WHEN rownum <= cnt*.25 THEN <col> END) AS first_quantile,
 		MAX(CASE WHEN rownum <= cnt*.5 THEN <col> END) AS second_quantile,
